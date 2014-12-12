@@ -10,9 +10,18 @@
 namespace bcs
 {
 typedef std::array<std::uint8_t,32> hash_t;
+struct script_command_t
+{
+	std::uint8_t opcode;
+	std::size_t offset;
+	script_command_t(const std::uint8_t& opc,const std::uint8_t& off):
+		opcode(opc),offset(off)
+	{}
+};
 struct script_t
 {
 	std::vector<uint8_t> bytes;
+	std::vector<script_command_t> parse() const;
 };
 struct input_t
 {

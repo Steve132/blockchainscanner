@@ -1,6 +1,7 @@
 #include "blockchainscan.h"
 #include<sstream>
 #include<iomanip>
+//http://codesuppository.blogspot.com/2014/01/how-to-parse-bitcoin-blockchain.html
 
 
 namespace bcs
@@ -130,5 +131,31 @@ std::vector<std::string> get_block_filenames(const std::string& directory)
 	}
 	return outnames;
 }
+
+std::vector<script_command_t> script_t::parse() const
+{
+	std::vector<script_command_t> output;
+	for(size_t i=0;i<bytes.size();i++)
+	{
+		uint8_t cmd=bytes[i];
+		output.emplace_back(cmd,i);
+		if(cmd >= 1 && cmd <= 75)
+		{
+			i+=cmd;
+		}
+		else if(cmd >=76 && cmd <=78)
+		{
+			uint32_t skipamount=0;
+			uint_fast8_t numbytes=1 << (cmd-76);
+			for(uint_fast8_t sb=0;sb < numbytes;sb++)
+			{
+				skipamount|=((uint32_t)bytes[i+1+sb]) << (8*sb);
+			}
+			i+=numbytes;
+			i+=skipamount;
+		}
+	}
+}
+
 
 }
