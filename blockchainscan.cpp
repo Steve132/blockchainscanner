@@ -134,10 +134,12 @@ std::vector<std::string> get_block_filenames(const std::string& directory)
 
 std::vector<script_command_t> script_t::parse() const
 {
+	static const uint8_t DATA=0xFF;
 	std::vector<script_command_t> output;
 	for(size_t i=0;i<bytes.size();i++)
 	{
 		uint8_t cmd=bytes[i];
+		
 		output.emplace_back(cmd,i);
 		if(cmd >= 1 && cmd <= 75)
 		{
