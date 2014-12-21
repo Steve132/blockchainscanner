@@ -5,5 +5,5 @@ add_executable(count_transactions
 	blockchainscan.cpp
 	scantransactions.cpp)
 add_executable(firstbitsd firstbitsd.cpp)
-add_executable(httptest httptest.cpp)
+add_executable(httptest microhttpdpp.cpp httptest.cpp)
 target_link_libraries(httptest microhttpd)
