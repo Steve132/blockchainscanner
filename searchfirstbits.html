@@ -1,13 +1,46 @@
 <!DOCTYPE html>
 <head>
 	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+	    <style>
+			body {
+			padding-top: 40px;
+			padding-bottom: 40px;
+			background-color: #eee;
+			}
+
+			.form-search {
+			max-width: 512px;
+			padding: 15px;
+			margin: 0 auto;
+			}
+			.form-search .form-search-heading,
+			.form-search .checkbox {
+			margin-bottom: 10px;
+			}
+			.form-search .checkbox {
+			font-weight: normal;
+			}
+			.form-search .form-control {
+			position: relative;
+			height: auto;
+			-webkit-box-sizing: border-box;
+			-moz-box-sizing: border-box;
+			  box-sizing: border-box;
+			padding: 10px;
+			font-size: 16px;
+			}
+			.form-search .form-control:focus {
+			z-index: 2;
+			}
+		</style>
 </head>
-<body>
- 
-	<div style="margin: 50px 50px">
-		<label for="search">Search: </label>
-		<input id="search" type="text" data-provide="typeahead">
-	</div>
+<body>	
+	<div class="container">
+      <form class="form-search" role="form">
+        <h2 class="form-search-heading">Search</h2>
+		<input id="search" type="text" class="form-control" data-provide="typeahead" css=".dropdown-menu { min-width: 100% }" required autofocus>
+      </form>
+    </div>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
     <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
