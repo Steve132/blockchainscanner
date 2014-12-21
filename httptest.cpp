@@ -10,8 +10,6 @@
 #include <iterator>
 #include<string>
 
-#define PAGE "<html><head><title>libmicrohttpd demo</title>"\
-             "</head><body>libmicrohttpd demo</body></html>"
 
 static bool ahc_echo_accept(const struct sockaddr* sa,socklen_t sl)
 {
@@ -62,7 +60,7 @@ struct filecache
 		notfoundresponse(df)
 	{}
 	
-	bool serve_cached_files(struct MHD_Connection * connection,
+	int serve_cached_files(struct MHD_Connection * connection,
 		    std::string url,
 		    const std::string& method,
                     const std::string& version,
@@ -71,12 +69,10 @@ struct filecache
                     void ** ptr) 
 	{
 		static int dummy;			//Not reentrant?!
-		const char * page = PAGE;
-		struct MHD_Response * response;
 		int ret;
 
 		if ( method != "GET")
-			return false; /* unexpected method */
+			return MHD_NO; /* unexpected method */
 			
 			//TODO: check if URL exists in first call or have to defer file valid checks 
 		
@@ -85,10 +81,10 @@ struct filecache
 			/* The first time only the headers are valid,
 				do not respond in the first round... */
 			*ptr = &dummy;
-			return true;
+			return MHD_YES;
 		}
 		if (0 != *upload_data_size)
-			return false; /* upload data in a GET!? */
+			return MHD_NO; /* upload data in a GET!? */
 		*ptr = NULL; /* clear context pointer */
 		
 		/*if( url.find('.') !=std::string::npos)
@@ -114,19 +110,14 @@ struct filecache
 		}
 		if(iter == data.end())//file not found
 		{
-			return notfoundresponse(connection,url,method,version,upload_data,upload_data_size,ptr);
+			std::string out("<html><body><h1>");
+			out+="GET "+url+" :requested file not found</h1></body></html>";
+			return mdhpp_respond(connection,out,MHD_HTTP_NOT_FOUND);//notfoundresponse(connection,url,method,version,upload_data,upload_data_size,ptr);
 		}
 		
 		const std::string& content=iter->second.contents;
-		response = MHD_create_response_from_data(content.size(),
-							(void*)content.data(),
-							MHD_NO,
-							MHD_NO);
-		ret = MHD_queue_response(connection,
-					MHD_HTTP_OK,
-					response);
-		MHD_destroy_response(response);
-		return ret;
+
+		return mdhpp_respond(connection,content,MHD_HTTP_OK,false);
 	}
 };
 		

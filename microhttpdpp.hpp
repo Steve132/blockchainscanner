@@ -8,9 +8,9 @@
 #include<functional>
 
 
-typedef std::function<bool (const struct sockaddr*,socklen_t)> acceptfunctype;
+typedef std::function<int (const struct sockaddr*,socklen_t)> acceptfunctype;
 typedef std::function<
-			bool (struct MHD_Connection *,
+			int (struct MHD_Connection *,
 			const std::string&,
 			const std::string&,
 			const std::string&,
@@ -24,5 +24,7 @@ struct MHD_Daemon* mhdpp_start_daemon(		unsigned int flags,
 						const acceptfunctype& accept,
 						const respondfunctype& respond,
 						...);
+
+int mdhpp_respond(struct MHD_Connection* connection,const std::string& content,int status=MHD_HTTP_OK,bool must_copy=true);
 
 #endif

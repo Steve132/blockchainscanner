@@ -6,14 +6,7 @@ extern "C"
 		    const struct sockaddr* sa,socklen_t sl)
 	{
 		const acceptfunctype& af=*reinterpret_cast<const acceptfunctype*>(cls);
-		if(af(sa,sl))
-		{
-			return MHD_YES;
-		}
-		else
-		{
-			return MHD_NO;
-		}
+		return af(sa,sl);
 	}
 	static int respond_cwrap(void * cls,
 		    struct MHD_Connection * connection,
@@ -25,14 +18,7 @@ extern "C"
                     void ** ptr)
 	{
 		const respondfunctype& rf=*reinterpret_cast<const respondfunctype*>(cls);
-		if(rf(connection,url,method,version,upload_data,upload_data_size,ptr))
-		{
-			return MHD_YES;
-		}
-		else
-		{
-			return MHD_NO;
-		}
+		return rf(connection,url,method,version,upload_data,upload_data_size,ptr);
 	}
 }
 		
@@ -51,4 +37,19 @@ struct MHD_Daemon* mhdpp_start_daemon(		unsigned int flags,
 		const_cast<void*>(reinterpret_cast<const void*>(&respond)), ap);
 	va_end (ap);
 	return daemon;
+}
+		
+int mdhpp_respond(struct MHD_Connection* connection,const std::string& content,int status,bool must_copy)
+{
+	int ret;
+	struct MHD_Response * response;
+	response = MHD_create_response_from_data(content.size(),
+							(void*)content.data(),
+							MHD_NO,
+							must_copy ? MHD_YES : MHD_NO);
+	ret = MHD_queue_response(connection,
+					status,
+					response);
+	MHD_destroy_response(response);
+	return ret;
 }
