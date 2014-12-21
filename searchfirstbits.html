@@ -32,13 +32,18 @@
 			.form-search .form-control:focus {
 			z-index: 2;
 			}
+			.well{
+			background-color:#d9edf7;
+			}
 		</style>
 </head>
 <body>	
 	<div class="container">
       <form class="form-search" role="form">
         <h2 class="form-search-heading">Search</h2>
-		<input id="search" type="text" class="form-control" data-provide="typeahead" css=".dropdown-menu { min-width: 100% }" required autofocus>
+		<div class="well">
+			<input id="search" type="text" class="form-control" data-provide="typeahead" css=".dropdown-menu { min-width: 100% }" required autofocus>
+		</div>
       </form>
     </div>
 
