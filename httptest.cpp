@@ -126,11 +126,6 @@ struct filecache
 int main(int argc,
 	 char ** argv) {
   struct MHD_Daemon * d;
-  if (argc != 2) {
-    printf("%s PORT\n",
-	   argv[0]);
-    return 1;
-  }
   filecache fc;
   respondfunctype rfn=std::bind(&filecache::serve_cached_files,&fc,
 					std::placeholders::_1,
