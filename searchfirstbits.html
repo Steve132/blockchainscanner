@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<head>
+	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+</head>
+<body>
+ 
+	<div style="margin: 50px 50px">
+		<label for="search">Search: </label>
+		<input id="search" type="text" data-provide="typeahead">
+	</div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+	<script src="js/bootstrap-typeahead.js"></script>
+ 
+	<script type="text/javascript">
+		$(document).ready(function($)
+		{
+			// Workaround for bug in mouse item selection
+			$.fn.typeahead.Constructor.prototype.blur = function()
+			{
+				var that = this;
+				setTimeout(function ()
+				{
+					that.hide();
+				}, 250);
+			};
+
+			$('#search').typeahead(
+			{
+				source: function(query, process)
+				{
+					// Entries from first bits
+					if(query.length >= 4)
+					{	
+						return [query];//["Deluxe Bicycle", "Super Deluxe Trampoline", "Super Duper Scooter"];
+					}
+				}
+			});
+		});
+	</script>
+ 
+</body>
+</html>
