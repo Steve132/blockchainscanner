@@ -10,4 +10,4 @@ add_executable(httptest httptest.cpp)
 add_library(mhttpdpp microhttpdpp.cpp mhttpdfiles.cpp)
 target_link_libraries(mhttpdpp microhttpd)
 target_link_libraries(httptest mhttpdpp)
-
+target_link_libraries(firstbitsd mhttpdpp)

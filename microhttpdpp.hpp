@@ -26,5 +26,5 @@ struct MHD_Daemon* mhdpp_start_daemon(		unsigned int flags,
 						...);
 
 int mdhpp_respond(struct MHD_Connection* connection,const std::string& content,int status=MHD_HTTP_OK,bool must_copy=true);
-
+int mdhpp_default_accept(const struct sockaddr* sa,socklen_t sl);
 #endif

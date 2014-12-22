@@ -15,9 +15,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include "microhttpdpp.hpp"
 
 #include "mhttpdfiles.h"
 #include "microhttpd.h"
+
 /*
 Requests it can recieve: 
 	POST /block (authentication required...maybe only allowed from localhost!)
@@ -109,20 +111,21 @@ inline int char2hashdex(char a)
 
 struct firstbits_t
 {
-private:
-	char* filebeginning;	//memmaped file
-	char* tablebeginning;   //memmapped table;
-	
+public:
 	struct metadata_t
 	{
 		std::uint64_t num_blocks;    //e.g. 36^num_hashsize;
 		std::uint16_t max_addresses_per_block; //e.g. 256
 		std::uint8_t num_characters_per_block;	  //e.g. 4
 	};
+	uint32_t* lastblockchainid;
+private:
+	char* filebeginning;	//memmaped file
+	char* tablebeginning;   //memmapped table;
+	
+
 	
 	metadata_t mdata;
-	uint32_t* lastblockchainid;
-	
 	mutable std::unique_ptr<std::atomic<std::uint32_t>[] > block_threadstate;
 	size_t blocksize;
 	size_t pagesize;
@@ -285,14 +288,97 @@ int test()
 }
 #endif
 
+static int api_server(firstbits_t* fb,
+			struct MHD_Connection * con,
+			const std::string& url,
+			const std::string& method,
+			const std::string& version,
+			const char* upload_data,
+			size_t * upload_data_size,
+			void ** ptr)
+{
+	static int dummy;			//Not reentrant?!
+	if(&dummy != *ptr)
+	{
+		/* The first time only the headers are valid,
+			do not respond in the first round... */
+		*ptr = &dummy;
+		return MHD_YES;
+	}
+	
+	if(method=="GET")
+	{
+		if(url.substr(5,14)=="firstbits")
+		{
+			std::ostringstream oss;
+			oss << "[";
+			bool skip=false;
+			std::string searchquery=url.substr(15);
+			for(auto ch:searchquery)
+			{
+				if(!isalnum(ch))
+				{
+					skip=true;
+				}
+			}
+			if(!skip)
+			{
+				auto result=fb->get_firstbits(searchquery);
+				bool comma=false;
+	
+				for(const address_t* i=result.first;i!=result.second;++i)
+				{
+					if(comma)
+					{
+						oss << ",";
+					}
+					oss << "\"" << &(i->data[0]) << "\"";
+					comma=true;
+				}
+			}
+			
+			oss << "]";
+			return mdhpp_respond(con,oss.str());
+		}
+		else if(url.substr(5)=="block")
+		{
+			std::ostringstream oss;
+			oss << *(fb->lastblockchainid) << "\n";
+			return mdhpp_respond(con,oss.str());
+		}
+		return mdhpp_respond(con,"<html><body><h1>Api Call not recognized</h1></body></html>");
+	}
+	return MHD_NO;
+}
+
+static int serve_dispatch(filecache* fc,firstbits_t* fb,
+			struct MHD_Connection * con,
+			const std::string& url,
+			const std::string& method,
+			const std::string& version,
+			const char* upload_data,
+			size_t * upload_data_size,
+			void ** ptr)
+{
+	std::cout << method << " " << url << std::endl;
+	if(url.substr(0,4)=="/api")
+	{
+		return api_server(fb,con,url,method,version,upload_data,upload_data_size,ptr);
+	}
+	else
+	{
+		return fc->serve_cached_files(con,url,method,version,upload_data,upload_data_size,ptr);
+	}
+}
+
 
 
 int main(int argc,char** argv)
 {
-	std::string httpdir=".";
+	std::string httpdir="";
 	uint32_t httpport=8080;
 	std::string dbfile="out.db";
-	uint32_t num_blocks=3;
+	uint32_t num_characters_per_block=3;
 	uint32_t num_addresses_per_block=16;
 	uint32_t load_block=0;
 	
@@ -311,9 +397,9 @@ int main(int argc,char** argv)
 		{
 			dbfile=args[++i];
 		}
-		else if(args[i]=="--num_blocks")
+		else if(args[i]=="--num_characters_per_block")
 		{
-			std::istringstream(args[++i]) >> num_blocks;
+			std::istringstream(args[++i]) >> num_characters_per_block;
 		}
 		else if(args[i]=="--num_addresses_per_block")
 		{
@@ -326,4 +412,41 @@ int main(int argc,char** argv)
 	}
 	
 	
+	if(load_block==0)
+	{
+		filecache fc(httpdir);
+		firstbits_t::metadata_t mdata;
+		mdata.num_blocks=1;
+		mdata.max_addresses_per_block=num_addresses_per_block;
+		mdata.num_characters_per_block=num_characters_per_block;
+		for(int i=0;i<mdata.num_characters_per_block;i++)
+		{
+			mdata.num_blocks*=36;
+		}
+		firstbits_t fb(dbfile,mdata);
+		respondfunctype rfn=std::bind(serve_dispatch,&fc,&fb,
+					std::placeholders::_1,
+					std::placeholders::_2,
+					std::placeholders::_3,
+					std::placeholders::_4,
+					std::placeholders::_5,
+					std::placeholders::_6,
+					std::placeholders::_7);
+  
+		struct MHD_Daemon* d = mhdpp_start_daemon(MHD_USE_THREAD_PER_CONNECTION,
+		       httpport,
+		       mdhpp_default_accept,
+		       rfn,
+		       MHD_OPTION_END);
+		if (d == NULL)
+			return 1;
+		(void) getchar ();
+		MHD_stop_daemon(d);
+		return 0;
+
+	}
+	else
+	{
+		//load blocks from stdin
+	}
 }

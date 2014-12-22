@@ -53,3 +53,7 @@ int mdhpp_respond(struct MHD_Connection* connection,const std::string& content,i
 	MHD_destroy_response(response);
 	return ret;
 }
+int mdhpp_default_accept(const struct sockaddr* sa,socklen_t sl)
+{
+	return MHD_YES;
+}

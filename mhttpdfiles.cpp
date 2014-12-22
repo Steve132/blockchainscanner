@@ -2,11 +2,9 @@
 #include "mhttpdfiles.h"
 #include <fstream>
 #include <iterator>
+#include <iostream>
 
-static bool ahc_echo_accept(const struct sockaddr* sa,socklen_t sl)
-{
-	return true;
-}
+
 static bool def_reject(struct MHD_Connection * connection,
 		    const std::string& url,
 		    const std::string& method,
@@ -89,6 +87,7 @@ int filecache::serve_cached_files(struct MHD_Connection * connection,
 		std::ifstream infile(fn2,std::ifstream::in | std::ifstream::binary);
 		if(infile)
 		{
+			std::cout << fn2 << ":OK\n";
 			iter=data.emplace(fn2,filecachevalue_t{mt,std::string((std::istreambuf_iterator<char>(infile)),std::istreambuf_iterator<char>())}).first;
 		}
 	}
