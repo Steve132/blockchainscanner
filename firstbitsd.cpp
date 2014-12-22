@@ -309,8 +309,9 @@ static int api_server(firstbits_t* fb,
 	
 	if(method=="GET")
 	{
-		if(url.substr(5,14)=="firstbits")
+		if(url.substr(5,9)=="firstbits")
 		{
+			
 			std::ostringstream oss;
 			oss << "[";
 			bool skip=false;
@@ -341,7 +342,7 @@ static int api_server(firstbits_t* fb,
 			oss << "]";
 			return mdhpp_respond(con,oss.str());
 		}
-		else if(url.substr(5)=="block")
+		else if(url.substr(5,5)=="block")
 		{
 			std::ostringstream oss;
 			oss << *(fb->lastblockchainid) << "\n";
