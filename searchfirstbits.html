@@ -52,6 +52,7 @@
 	<script src="js/bootstrap-typeahead.js"></script>
  
 	<script type="text/javascript">
+		var addresses = [];
 		$(document).ready(function($)
 		{
 			// Workaround for bug in mouse item selection
@@ -70,9 +71,15 @@
 				{
 					// Entries from first bits
 					if(query.length >= 4)
-					{	
-						return [query];//["Deluxe Bicycle", "Super Deluxe Trampoline", "Super Duper Scooter"];
+					{
+						$.getJSON("/api/firstbits/" + query).done(function(data)
+						{
+							addresses = data;
+						});
 					}
+					else
+						addresses = [query];
+					return addresses;
 				}
 			});
 		});
