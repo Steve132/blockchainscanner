@@ -5,6 +5,7 @@
 #include<fstream>
 #include<sstream>
 #include<memory>
+#include<iterator>
 
 #include<cstring>
 #include<cstdint>
@@ -411,19 +412,20 @@ int main(int argc,char** argv)
 		}
 	}
 	
+	firstbits_t::metadata_t mdata;
+	mdata.num_blocks=1;
+	mdata.max_addresses_per_block=num_addresses_per_block;
+	mdata.num_characters_per_block=num_characters_per_block;
+	for(int i=0;i<mdata.num_characters_per_block;i++)
+	{
+		mdata.num_blocks*=36;
+	}
+	firstbits_t fb(dbfile,mdata);
 	
 	if(load_block==0)
 	{
 		filecache fc(httpdir);
-		firstbits_t::metadata_t mdata;
-		mdata.num_blocks=1;
-		mdata.max_addresses_per_block=num_addresses_per_block;
-		mdata.num_characters_per_block=num_characters_per_block;
-		for(int i=0;i<mdata.num_characters_per_block;i++)
-		{
-			mdata.num_blocks*=36;
-		}
-		firstbits_t fb(dbfile,mdata);
+		
 		respondfunctype rfn=std::bind(serve_dispatch,&fc,&fb,
 					std::placeholders::_1,
 					std::placeholders::_2,
@@ -447,6 +449,6 @@ int main(int argc,char** argv)
 	}
 	else
 	{
-		//load blocks from stdin
+		fb.load_block(load_block,(std::istream_iterator<std::string>(std::cin)),std::istream_iterator<std::string>());//load blocks from stdin
 	}
 }
