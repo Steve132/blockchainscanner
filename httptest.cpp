@@ -1,11 +1,6 @@
 #include "microhttpdpp.hpp"
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 #include<functional>
 #include<unordered_map>
-#include <fstream>
-#include <iterator>
 #include<string>
 #include "mhttpdfiles.h"
 

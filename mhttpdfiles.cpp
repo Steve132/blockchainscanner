@@ -29,10 +29,14 @@ time_t get_mtime(const std::string& path)
 
 std::string abspath(const std::string& s)
 {
+#ifdef NO_REALPATH
+	return s;
+#else
 	char* rp=realpath(s.c_str(),NULL);
 	std::string news(rp);
 	free(rp);
 	return news;
+#endif
 }
 
 

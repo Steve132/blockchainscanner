@@ -3,6 +3,7 @@
 #include<atomic>
 #include<algorithm>
 #include<fstream>
+#include<sstream>
 #include<memory>
 
 #include<cstring>
@@ -288,5 +289,41 @@ int test()
 
 int main(int argc,char** argv)
 {
+	std::string httpdir=".";
+	uint32_t httpport=8080;
+	std::string dbfile="out.db";
+	uint32_t num_blocks=3;
+	uint32_t num_addresses_per_block=16;
+	uint32_t load_block=0;
+	
+	std::vector<std::string> args(argv,argv+argc);
+	for(uint i=1;i<argc;i++)
+	{
+		if(args[i]=="--httpdir")
+		{
+			httphostdir=args[++i];
+		}
+		else if(args[i]=="--httpport")
+		{
+			istringstream(args[++i]) >> httpport;
+		}
+		else if(args[i]=="--dbfile")
+		{
+			dbfile=args[++i];
+		}
+		else if(args[i]=="--num_blocks")
+		{
+			istringstream(args[++i]) >> num_blocks;
+		}
+		else if(args[i]=="--num_addresses_per_block")
+		{
+			istringstream(args[++i]) >> num_addresses_per_block;
+		}
+		else if(args[i]=="--load_block")
+		{
+			
+		}
+	}
+	
 	
 }
