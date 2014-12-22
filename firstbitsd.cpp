@@ -14,6 +14,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+#include "mhttpdfiles.h"
+#include "microhttpd.h"
 /*
 Requests it can recieve: 
 	POST /block (authentication required...maybe only allowed from localhost!)
@@ -263,44 +266,10 @@ public:
 		safemsync(lastblockchainid,sizeof(uint32_t),MS_ASYNC);
 	}
 };
-/*
 
-static int ahc_echo(void * cls,
-		    struct MHD_Connection * connection,
-		    const char * url,
-		    const char * method,
-                    const char * version,
-		    const char * upload_data,
-		    size_t * upload_data_size,
-                    void ** ptr) {
-  static int dummy;
-  const char * page = cls;
-  struct MHD_Response * response;
-  int ret;
 
-  if (0 != strcmp(method, "GET"))
-    return MHD_NO; //* unexpected method 
-  if (&dummy != *ptr)
-    {
-      // The first time only the headers are valid,do not respond in the first round... 
-      *ptr = &dummy;
-      return MHD_YES;
-    }
-  if (0 != *upload_data_size)
-    return MHD_NO; //* upload data in a GET!? 
-  *ptr = NULL; //* clear context pointer 
-  response = MHD_create_response_from_data(strlen(page),
-					   (void*) page,
-					   MHD_NO,
-					   MHD_NO);
-  ret = MHD_queue_response(connection,
-			   MHD_HTTP_OK,
-			   response);
-  MHD_destroy_response(response);
-  return ret;
-}*/
-
-int main(int argc,char** argv)
+#ifdef TESTMODE
+int test()
 {
 	firstbits_t fb("out.db",{36*36*36,16,3});
 	const std::string testaddresses[]={"1Applesaucemeister","1Pantywaste","1Appletini","1Appliancedirect","1Applesaucemeister"};
@@ -312,4 +281,12 @@ int main(int argc,char** argv)
 		std::cout << &(i->data[0]) << std::endl;
 	}
 	return 0;
+}
+#endif
+
+
+
+int main(int argc,char** argv)
+{
+	
 }
