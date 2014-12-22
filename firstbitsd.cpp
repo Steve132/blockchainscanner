@@ -301,11 +301,11 @@ int main(int argc,char** argv)
 	{
 		if(args[i]=="--httpdir")
 		{
-			httphostdir=args[++i];
+			httpdir=args[++i];
 		}
 		else if(args[i]=="--httpport")
 		{
-			istringstream(args[++i]) >> httpport;
+			std::istringstream(args[++i]) >> httpport;
 		}
 		else if(args[i]=="--dbfile")
 		{
@@ -313,15 +313,15 @@ int main(int argc,char** argv)
 		}
 		else if(args[i]=="--num_blocks")
 		{
-			istringstream(args[++i]) >> num_blocks;
+			std::istringstream(args[++i]) >> num_blocks;
 		}
 		else if(args[i]=="--num_addresses_per_block")
 		{
-			istringstream(args[++i]) >> num_addresses_per_block;
+			std::istringstream(args[++i]) >> num_addresses_per_block;
 		}
 		else if(args[i]=="--load_block")
 		{
-			
+			std::istringstream(args[++i]) >> load_block;
 		}
 	}
 	
