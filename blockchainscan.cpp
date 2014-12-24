@@ -1,6 +1,8 @@
 #include "blockchainscan.h"
 #include<sstream>
 #include<iomanip>
+#include<list>
+#include<algorithm>
 //http://codesuppository.blogspot.com/2014/01/how-to-parse-bitcoin-blockchain.html
 
 
@@ -81,6 +83,8 @@ std::istream& operator>>(std::istream& iss,block_t& ts)
 	{
 		return iss;
 	}
+	std::size_t     begg=iss.tellg();
+	begg-=4;
 	std::uint32_t 	blocklength=read_le<std::uint32_t>(iss);
 	std::uint32_t   versionnumber=read_le<std::uint32_t>(iss);
 	iss >> ts.previous;
@@ -94,6 +98,8 @@ std::istream& operator>>(std::istream& iss,block_t& ts)
 	{
 		iss >> ts.transactions[i];
 	}
+	std::size_t endg=iss.tellg();
+	iss.ignore(blocklength-(begg-endg));
 	return iss;
 }
 
@@ -104,17 +110,7 @@ std::string get_block_filename(const std::string& directory,const std::size_t& a
 	return directory+out.str();
 }
 
-std::ostream& operator<<(std::ostream& oss,const hash_t& hs)
-{
-	std::ios::fmtflags f(oss.flags());
-	oss << "0x";
-	for(int i=0;i<32;i++)
-	{
-		oss << std::hex << (int)hs[31-i];
-	}
-	oss.flags(f);
-	return oss;
-}
+
 
 std::vector<std::string> get_block_filenames(const std::string& directory)
 {
@@ -132,6 +128,66 @@ std::vector<std::string> get_block_filenames(const std::string& directory)
 	return outnames;
 }
 
+typedef std::vector<uint8_t> run;
+
+std::list<run> script_t::get_addresses() const
+{
+	std::list<run> allruns;
+	run currentrun;
+	
+	for(size_t i=0;i<bytes.size();i++)
+	{
+		const uint8_t* dataptr;
+		size_t datalen=0;
+		
+		uint8_t cmd=bytes[i];
+		if(cmd >= 1 && cmd <= 75)
+		{
+			datalen=cmd;
+			dataptr=&bytes[i+1];
+			i+=datalen;
+		}
+		else if(cmd >=76 && cmd <=78)
+		{
+			uint_fast8_t numbytes=1 << (cmd-76);
+			for(uint_fast8_t sb=0;sb < numbytes;sb++)
+			{
+				datalen|=((uint32_t)bytes[i+1+sb]) << (8*sb);
+			}
+			dataptr=&bytes[i+numbytes+1];
+			i+=numbytes;
+			i+=1;
+			i+=datalen;
+		}
+		
+		if(datalen == 0 && currentrun.size())
+		{
+			allruns.push_back(currentrun);
+			currentrun.clear();
+		}
+		else if(datalen != 0)
+		{
+			currentrun.reserve(currentrun.size()+datalen);
+			for(size_t k=0;k<datalen;k++)
+			{
+				currentrun.push_back(dataptr[k]);
+			}
+		}
+	}
+	if(currentrun.size())
+	{
+		allruns.push_back(currentrun);
+	}
+	std::remove_if(allruns.begin(),allruns.end(),[](const run& r)
+	{
+		return !(r.size() >= 20);
+	});
+	return allruns;
+}
+
+
+
+/*
 std::vector<script_command_t> script_t::parse() const
 {
 	static const uint8_t DATA=0xFF;
@@ -157,7 +213,20 @@ std::vector<script_command_t> script_t::parse() const
 			i+=skipamount;
 		}
 	}
+}*/
+
+
+
 }
 
-
+std::ostream& operator<<(std::ostream& oss,const bcs::hash_t& hs)
+{
+	std::ios::fmtflags f(oss.flags());
+	oss << "0x";
+	for(int i=0;i<32;i++)
+	{
+		oss << std::hex << (int)hs[31-i];
+	}
+	oss.flags(f);
+	return oss;
 }

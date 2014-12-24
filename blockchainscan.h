@@ -6,22 +6,25 @@
 #include<cstdint>
 #include<array>
 #include<vector>
+#include<list>
 
 namespace bcs
 {
 typedef std::array<std::uint8_t,32> hash_t;
-struct script_command_t
+/*struct script_command_t
 {
 	std::uint8_t opcode;
 	std::size_t offset;
 	script_command_t(const std::uint8_t& opc,const std::uint8_t& off):
 		opcode(opc),offset(off)
 	{}
-};
+};*/
 struct script_t
 {
 	std::vector<uint8_t> bytes;
-	std::vector<script_command_t> parse() const;
+	std::list<std::vector<uint8_t> > get_addresses() const;
+	
+	//std::vector<script_command_t> parse() const;
 };
 struct input_t
 {
@@ -63,7 +66,8 @@ std::istream& operator>>(std::istream& iss,output_t& out);
 std::istream& operator>>(std::istream& iss,transaction_t& ts);
 std::istream& operator>>(std::istream& iss,block_t& ts);
 
-std::ostream& operator<<(std::ostream& oss,const hash_t& hs);
 }
+
+std::ostream& operator<<(std::ostream& oss,const bcs::hash_t& hs);
 
 #endif 

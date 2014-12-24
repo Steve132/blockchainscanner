@@ -1,3 +1,6 @@
+#ifndef FILECACHE_H
+#define FILECACHE_H
+
 #include<string>
 #include<cstdlib>
 #include<unordered_map>
@@ -24,3 +27,5 @@ struct filecache
 		    size_t * upload_data_size,
                     void ** ptr);
 };
+
+#endif
