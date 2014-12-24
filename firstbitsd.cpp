@@ -242,7 +242,6 @@ int main(int argc,char** argv)
 	}
 	else if(load_block==0)
 	{
-		std::cerr << "File created " << std::endl;
 		if(create_only)
 		{
 			return 0;
