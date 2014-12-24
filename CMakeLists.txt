@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_CXX_FLAGS "-std=c++11")
-add_definitions(-DNO_REALPATH)
+#add_definitions(-DNO_REALPATH)
 include_directories(lib)
 add_executable(print_addresses
 	blockchainscan.cpp

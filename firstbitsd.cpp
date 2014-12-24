@@ -178,7 +178,7 @@ void import_blockchain(firstbits_t* fb,const std::string& dirloc,size_t begi=0,s
 
 int main(int argc,char** argv)
 {
-	std::string httpdir="";
+	std::string httpdir=".";
 	uint32_t httpport=8080;
 	std::string dbfile="out.db";
 	uint32_t num_characters_per_block=3;
