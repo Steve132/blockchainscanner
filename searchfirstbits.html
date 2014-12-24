@@ -42,7 +42,8 @@
       <form class="form-search" role="form">
         <h2 class="form-search-heading">Search</h2>
 		<div class="well">
-			<input id="search" type="text" class="form-control" data-provide="typeahead" css=".dropdown-menu { min-width: 100% }" required autofocus>
+			<div class="alert alert-info">
+			<input id="search" type="text" class="form-control" data-provide="typeahead" css=".dropdown-menu { min-width: 100% }" required autofocus placeholder="Enter an address">
 		</div>
       </form>
     </div>
@@ -69,17 +70,23 @@
 			{
 				source: function(query, process)
 				{
+					console.log("SOURCE: " + query);
 					// Entries from first bits
 					if(query.length >= 4)
 					{
 						$.getJSON("/api/firstbits/" + query).done(function(data)
 						{
+							console.log(data);
 							addresses = data;
+							// typeahead update now with new data
 						});
 					}
-					else
-						addresses = [query];
 					return addresses;
+				},
+				updater: function(item)
+				{
+					console.log(item);
+					return item;
 				}
 			});
 		});
