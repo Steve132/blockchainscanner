@@ -42,7 +42,9 @@
       <form class="form-search" role="form">
         <h2 class="form-search-heading">Search</h2>
 		<div class="well">
-			<div class="alert alert-info">
+			<div class="alert alert-danger" id="alert-box" role="alert"> 
+				<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true" id="alert-text"></span>
+			</div>
 			<input id="search" type="text" class="form-control" data-provide="typeahead" css=".dropdown-menu { min-width: 100% }" required autofocus placeholder="Enter an address">
 		</div>
       </form>
@@ -56,6 +58,8 @@
 		var addresses = [];
 		$(document).ready(function($)
 		{
+			$("#alert-box").hide();
+
 			// Workaround for bug in mouse item selection
 			$.fn.typeahead.Constructor.prototype.blur = function()
 			{
@@ -66,28 +70,50 @@
 				}, 250);
 			};
 
+			function setSearchSource(query, process)
+			{
+				if(Array.isArray(query))
+				{
+					console.log('called from json entry' + query);
+					addresses = query;
+				}
+				else if(query.length < 4)
+					addresses = [query];
+				return addresses;
+			}
+
+			function handleSelection()
+			{
+				// alert box on selection
+				console.log("HANDLING SELECTION: " + query);
+				var query = $("#search").val();
+				if(query.length < 5)
+				{
+					$("#alert-text").append("Cannot search: too few characters");
+					$("#alert-box").show();
+				}
+				else
+					window.location = "https://blockchain.info/tx/" + query;
+			}
+
 			$('#search').typeahead(
 			{
-				source: function(query, process)
+				source: setSearchSource,
+			});
+
+			$('#search').keyup(function(e)
+			{
+				var query = $('#search').val();
+				if(query.length >= 4)
 				{
-					console.log("SOURCE: " + query);
-					// Entries from first bits
-					if(query.length >= 4)
+					$.getJSON("/api/firstbits/" + query).done(function(data)
 					{
-						$.getJSON("/api/firstbits/" + query).done(function(data)
-						{
-							console.log(data);
-							addresses = data;
-							// typeahead update now with new data
-						});
-					}
-					return addresses;
-				},
-				updater: function(item)
-				{
-					console.log(item);
-					return item;
+						setSearchSource(data);
+					});
 				}
+
+				if(e.keyCode == 13) // enter
+					handleSelection();
 			});
 		});
 	</script>
