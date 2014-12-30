@@ -2,6 +2,8 @@
 #include<iterator>
 #include<sstream>
 #include<iostream>
+#include<cstring>
+#include<algorithm>
 #include "BitcoinAddress.h"
 
 /*char numtohex(int i)
@@ -27,6 +29,12 @@ struct OneShotReadBuf : public std::streambuf
     }
 };
 
+typedef std::array<uint8_t,25> local_address_t;
+bool operator<(const local_address_t& a,const local_address_t& b)
+{
+	return memcmp(reinterpret_cast<const char*>(&a),reinterpret_cast<const char*>(&b),25) < 0;
+}
+
 int main(int argc,char** argv)
 {
 	std::string dirloc("/home/steven/.bitcoin/blocks/");
@@ -45,7 +53,10 @@ int main(int argc,char** argv)
 		std::istringstream(argv[2]) >> endi;	
 	}
 	
-//	std::vector<char> filedata_backing(1 << 28);
+	std::vector<local_address_t > all_addresses;
+	size_t memory=(1ULL << 34)/25;
+	all_addresses.reserve(memory);
+	
 
 	for(size_t i=begi;i<endi;i++)
 	{
@@ -75,27 +86,44 @@ int main(int argc,char** argv)
 				for(auto outputiterator=titerator->outputs.cbegin();outputiterator!=titerator->outputs.cend();++outputiterator)
 				{
 					auto lst=outputiterator->script.get_addresses();
-					
 					for(const std::vector<uint8_t>& a: lst)
 					{
-						std::array<uint8_t,25> binaddress;
+						local_address_t binaddress;
 						std::array<char,37> ascii;
-						if(a.size() > 63)
+						if(a.size() > 60)
 						{
 							bitcoinPublicKeyToAddress(&a[0],&binaddress[0]);
 						}
-						else if(a.size()==20)
+						else if(a.size() >= 20)
 						{
 							bitcoinRIPEMD160ToAddress(&a[0],&binaddress[0]);
 						}
-						bitcoinAddressToAscii(&binaddress[0],&ascii[0],37);
-						std::cout << &ascii[0] << "\n";
+						//bitcoinAddressToAscii(&binaddress[0],&ascii[0],37);
+						//std::cout << &ascii[0] << "\n";
+						all_addresses.push_back(binaddress);
 					}
 				}
+				total_transactions++;
 			}
 			lastblockhash=biterator->previous;
 		}
 	}
-	std::cerr << lastblockhash << std::endl;
+	std::cerr << "Detected " << total_transactions << " transactions" << std::endl;
+	std::cerr << "Sorting all addressess" << std::endl;
+	std::sort(all_addresses.begin(),all_addresses.end());
+	std::cerr << "Removing all addresses" << std::endl;
+	auto newend=std::unique(all_addresses.begin(),all_addresses.end());
+	std::cerr << "Printing all addresses" << std::endl;
+	for(auto i=all_addresses.begin();i!=newend;++i)
+	{
+		std::array<char,37> ascii;
+		bitcoinAddressToAscii(&(*i)[0],&ascii[0],37);
+		std::cout << &ascii[0] << "\n";
+	}
+	/*std::cerr << "Writing 16GB binary address file to disk" << std::endl;
+	std::ofstream outfile("address_stream.bin",std::ofstream::out | std::ofstream::binary);
+	outfile.write(reinterpret_cast<char*>(&all_addresses[0]),all_addresses.size()*25);
+	std::cerr << "Writing complete" << std::endl;
+	std::cerr << lastblockhash << std::endl;*/
 	return 0;
 }

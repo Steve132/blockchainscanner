@@ -90,20 +90,24 @@ inline std::uint64_t firstbits_t::hashbucket(const address_t& bitsearch) const
 	
 void firstbits_t::create_file(const std::string& fn,const metadata_t& md)
 {
+	static const size_t zerosize=1 << 28;
 	std::ofstream outfile(fn.c_str(),std::ofstream::binary | std::ofstream::out);
 	write_le(outfile,md.num_blocks);
 	write_le(outfile,md.max_addresses_per_block);
 	write_le(outfile,md.num_characters_per_block);
 	write_le<std::uint32_t>(outfile,0);//set the last blockchainid
 	size_t blocksize=md.max_addresses_per_block*SIZE_ADDRESS+sizeof(std::uint16_t);
+	size_t totalsize=md.num_blocks*blocksize;
 	
-	char* zbuf=(char*)malloc(blocksize);
-	memset(zbuf,0,blocksize);
 	
-	for(size_t i=0;i<md.num_blocks;i++)
+	char* zbuf=(char*)malloc(zerosize);
+	memset(zbuf,0,zerosize);
+	
+	for(size_t i=0;i<totalsize / zerosize;i++)
 	{
-		outfile.write(zbuf,blocksize);
+		outfile.write(zbuf,zerosize);
 	}
+	outfile.write(zbuf,totalsize % zerosize);
 	outfile.close();
 }
 	
@@ -193,7 +197,8 @@ void firstbits_t::insert_address(const address_t& address)
 	address_t* last=first+thisblock->num_addresses;
 	address_t *position=std::lower_bound(first,last,address);
 	
-	if(strncmp(reinterpret_cast<const char*>(position),reinterpret_cast<const char*>(&address),SIZE_ADDRESS)!=0)//Don't insert duplicates!
+	if(	(thisblock->num_addresses != this->mdata.max_addresses_per_block)
+		&& (strncmp(reinterpret_cast<const char*>(position),reinterpret_cast<const char*>(&address),SIZE_ADDRESS)!=0))//Don't insert duplicates!
 	{
 		*(last)=address;
 		std::rotate(position,last,last+1);

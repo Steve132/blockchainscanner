@@ -78,14 +78,13 @@ std::istream& operator>>(std::istream& iss,transaction_t& ts)
 std::istream& operator>>(std::istream& iss,block_t& ts)
 {
 	
-	for(int ch=iss.get();ch!=0xF9 && ch!=EOF;ch=iss.get());
-	if(iss.get()!=0xBE || iss.get()!=0xB4 || iss.get() != 0xD9)
-	{
-		return iss;
-	}
-	std::size_t     begg=iss.tellg();
-	begg-=4;
+	for(std::uint32_t ch=read_le<std::uint32_t>(iss);iss && ch!=0xD9B4BEF9;ch=read_le<std::uint32_t>(iss));
+	if(!iss) {return iss;}
+	
+	//std::size_t     begg=iss.tellg();
+	//begg-=4;  I bet block length doesn't include magic bytes or block length
 	std::uint32_t 	blocklength=read_le<std::uint32_t>(iss);
+	std::size_t     begg=iss.tellg();
 	std::uint32_t   versionnumber=read_le<std::uint32_t>(iss);
 	iss >> ts.previous;
 	iss >> ts.merkle_root;
@@ -99,7 +98,7 @@ std::istream& operator>>(std::istream& iss,block_t& ts)
 		iss >> ts.transactions[i];
 	}
 	std::size_t endg=iss.tellg();
-	iss.ignore(blocklength-(begg-endg));
+	iss.ignore(blocklength-(endg-begg)); //re-add this once you are clear
 	return iss;
 }
 
@@ -137,14 +136,14 @@ std::list<run> script_t::get_addresses() const
 	
 	for(size_t i=0;i<bytes.size();i++)
 	{
-		const uint8_t* dataptr;
+		size_t datapos=0;
 		size_t datalen=0;
 		
-		uint8_t cmd=bytes[i];
+		uint8_t cmd=bytes[i++];
 		if(cmd >= 1 && cmd <= 75)
 		{
 			datalen=cmd;
-			dataptr=&bytes[i+1];
+			datapos=i;
 			i+=datalen;
 		}
 		else if(cmd >=76 && cmd <=78)
@@ -152,11 +151,10 @@ std::list<run> script_t::get_addresses() const
 			uint_fast8_t numbytes=1 << (cmd-76);
 			for(uint_fast8_t sb=0;sb < numbytes;sb++)
 			{
-				datalen|=((uint32_t)bytes[i+1+sb]) << (8*sb);
+				datalen|=((uint32_t)bytes[i+sb]) << (8*sb);
 			}
-			dataptr=&bytes[i+numbytes+1];
 			i+=numbytes;
-			i+=1;
+			datapos=i;
 			i+=datalen;
 		}
 		
@@ -168,9 +166,9 @@ std::list<run> script_t::get_addresses() const
 		else if(datalen != 0)
 		{
 			currentrun.reserve(currentrun.size()+datalen);
-			for(size_t k=0;k<datalen;k++)
+			for(size_t k=datapos;(k<(i+datalen)) && (k < bytes.size());k++)
 			{
-				currentrun.push_back(dataptr[k]);
+				currentrun.push_back(bytes[k]);
 			}
 		}
 	}
