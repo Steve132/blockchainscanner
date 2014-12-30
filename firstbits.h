@@ -3,6 +3,7 @@
 #include<cstdint>
 #include<cctype>
 #include<memory>
+#include<string>
 #include<atomic>
 
 #include<sys/mman.h>
