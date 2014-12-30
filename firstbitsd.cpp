@@ -114,7 +114,9 @@ static int serve_dispatch(filecache* fc,firstbits_t* fb,
 			size_t * upload_data_size,
 			void ** ptr)
 {
+#ifndef NDEBUG
 	std::cout << method << " " << url << std::endl;
+#endif
 	if(url.substr(0,4)=="/api")
 	{
 		return api_server(fb,con,url,method,version,upload_data,upload_data_size,ptr);

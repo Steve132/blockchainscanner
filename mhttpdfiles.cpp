@@ -87,7 +87,7 @@ int filecache::serve_cached_files(struct MHD_Connection * connection,
 		std::ifstream infile(fn2,std::ifstream::in | std::ifstream::binary);
 		if(infile)
 		{
-			std::cout << fn2 << ":OK\n";
+		//	std::cout << fn2 << ":OK\n";
 			iter=data.emplace(fn2,filecachevalue_t{mt,std::string((std::istreambuf_iterator<char>(infile)),std::istreambuf_iterator<char>())}).first;
 		}
 	}
