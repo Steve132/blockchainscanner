@@ -5,6 +5,7 @@
 #include<memory>
 #include<string>
 #include<atomic>
+#include<array>
 
 #include<sys/mman.h>
 #include<unistd.h>
