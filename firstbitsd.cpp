@@ -9,8 +9,6 @@
 #include "microhttpdpp.hpp"
 #include "mhttpdfiles.h"
 #include "microhttpd.h"
-#include "blockchainscan.h"
-#include "BitcoinAddress.h"
 #include "firstbits.h"
 
 /*
@@ -51,6 +49,7 @@ static int api_server(firstbits_t* fb,
 			void ** ptr)
 {
 	static int dummy;			//Not reentrant?!
+	static const char* API_FAIL="<html><body><h1>Api Call not recognized</h1></body></html>";
 	if(&dummy != *ptr)
 	{
 		/* The first time only the headers are valid,
@@ -63,11 +62,30 @@ static int api_server(firstbits_t* fb,
 	{
 		if(url.substr(5,9)=="firstbits")
 		{
-			
+			bool case_sensitive;
+			std::string::const_iterator ci;
+			if(url.substr(15,9)=="sensitive")
+			{
+				ci=url.cbegin()+25;
+				case_sensitive=true;
+			}
+			else
+			{
+				ci=url.cbegin()+27;
+				case_sensitive=false;
+			}
 			std::ostringstream oss;
 			oss << "[";
 			bool skip=false;
-			std::string searchquery=url.substr(15);
+			std::string searchquery;
+			try
+			{
+				searchquery=std::string(ci,url.cend());
+			} catch(const std::exception& e)
+			{
+				return mdhpp_respond(con,API_FAIL);
+			}
+						
 			for(auto ch:searchquery)
 			{
 				if(!isalnum(ch))
@@ -82,12 +100,17 @@ static int api_server(firstbits_t* fb,
 	
 				for(const address_t* i=result.first;i!=result.second;++i)
 				{
-					if(comma)
+					bool should_skip=case_sensitive && (0!=strncmp(&i->data[0],searchquery.data(),searchquery.size()));
+					if(!should_skip)
 					{
-						oss << ",";
+				
+						if(comma)
+						{
+							oss << ",";
+						}
+						oss << "\"" << &(i->data[0]) << "\"";
+						comma=true;
 					}
-					oss << "\"" << &(i->data[0]) << "\"";
-					comma=true;
 				}
 			}
 			
@@ -100,7 +123,7 @@ static int api_server(firstbits_t* fb,
 			oss << *(fb->lastblockchainid) << "\n";
 			return mdhpp_respond(con,oss.str());
 		}
-		return mdhpp_respond(con,"<html><body><h1>Api Call not recognized</h1></body></html>");
+		return mdhpp_respond(con,API_FAIL);
 	}
 	return MHD_NO;
 }
@@ -127,57 +150,6 @@ static int serve_dispatch(filecache* fc,firstbits_t* fb,
 	}
 }
 
-void import_blockchain(firstbits_t* fb,const std::string& dirloc,size_t begi=0,size_t endi=0)
-{
-///	std::atomic<std::size_t> incrementor;
-	std::size_t total_transactions=0;
-	bcs::hash_t lastblockhash;
-	std::vector<std::string> files=bcs::get_block_filenames(dirloc);
-	endi=endi ? endi : files.size();
-
-//	#pragma omp parallel for
-	for(size_t i=begi;i<endi;i++)
-	{
-		std::size_t incrementor=0;
-		const std::string& filename=files[i];
-		std::ifstream blkin(filename.c_str(),std::ifstream::in|std::ifstream::binary);
-		for(auto biterator=std::istream_iterator<bcs::block_t>(blkin);
-		biterator!=std::istream_iterator<bcs::block_t>();
-		++biterator)
-		{
-			if((incrementor++ & 0xFF)==0)
-			{
-				std::cerr << "The current position is " << filename << ": ~%" << ((100*blkin.tellg()) >> 27)  << "\n";
-			}
-			for(auto titerator=biterator->transactions.cbegin();titerator !=biterator->transactions.cend();++titerator)
-			{
-				for(auto outputiterator=titerator->outputs.cbegin();outputiterator!=titerator->outputs.cend();++outputiterator)
-				{
-					auto lst=outputiterator->script.get_addresses();
-					
-					for(const std::vector<uint8_t>& a: lst)
-					{
-						std::array<uint8_t,25> binaddress;
-						address_t ascii;
-						if(a.size() > 63)
-						{
-							bitcoinPublicKeyToAddress(&a[0],&binaddress[0]);
-						}
-						else if(a.size()==20)
-						{
-							bitcoinRIPEMD160ToAddress(&a[0],&binaddress[0]);
-						}
-						bitcoinAddressToAscii(&binaddress[0],&ascii.data[0],SIZE_ADDRESS);
-						fb->insert_address(ascii);
-					}
-				}
-			}
-			lastblockhash=biterator->previous;
-		}
-	}
-	std::cerr << lastblockhash << std::endl;
-}
-
 int main(int argc,char** argv)
 {
 	std::string httpdir=".";
@@ -187,8 +159,6 @@ int main(int argc,char** argv)
 	uint32_t num_addresses_per_block=16;
 	uint32_t load_block=0;
 	bool create_only=false;
-	bool load_blockchain=false;
-	
 	
 	std::vector<std::string> args(argv,argv+argc);
 	for(uint i=1;i<argc;i++)
@@ -221,10 +191,6 @@ int main(int argc,char** argv)
 		{
 			create_only=true;
 		}
-		else if(args[i]=="--load_blockchain")
-		{
-			load_blockchain=true;
-		}
 	}
 	
 	firstbits_t::metadata_t mdata;
@@ -237,12 +203,7 @@ int main(int argc,char** argv)
 	}
 	firstbits_t fb(dbfile,mdata);
 	
-	if(load_blockchain)
-	{
-		std::string dirloc("/home/steven/.bitcoin/blocks/");
-		import_blockchain(&fb,dirloc,load_block);
-	}
-	else if(load_block==0)
+	if(load_block==0)
 	{
 		if(create_only)
 		{
