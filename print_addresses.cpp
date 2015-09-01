@@ -6,29 +6,6 @@
 #include<algorithm>
 #include "BitcoinAddress.h"
 
-/*char numtohex(int i)
-{
-	static const char hexchars[17]="0123456789ABCDEF";
-	return hexchars[i & 0xF];
-}
-
-void printaddresshex(std::ostream& out,const std::vector<uint8_t>& v)
-{
-	for(size_t i=0;i<v.size();i++)
-	{
-		out << numtohex(v[i] >> 4) << numtohex(v[i]);
-	}
-	out << "\n";
-}*/
-
-struct OneShotReadBuf : public std::streambuf
-{
-    OneShotReadBuf(char* s, std::size_t n)
-    {
-        setg(s, s, s + n);
-    }
-};
-
 typedef std::array<uint8_t,25> local_address_t;
 bool operator<(const local_address_t& a,const local_address_t& b)
 {
@@ -62,16 +39,6 @@ int main(int argc,char** argv)
 	{
 		const std::string& filename=files[i];
 		std::ifstream blkin(filename.c_str(),std::ifstream::in|std::ifstream::binary);
-/*		std::cerr << "Reading file into memory" << std::endl;
-		blkin.seekg (0, blkin.end);
-		size_t length = blkin.tellg();
-		blkin.seekg (0, blkin.beg);
-		blkin.read(&filedata_backing[0],length);
-		OneShotReadBuf osrb(&filedata_backing[0],length);
-		std::istream istr(&osrb);
-		std::cerr << "Reading file into memory complete" << std::endl;*/
-		
-		
 		
 		for(auto biterator=std::istream_iterator<bcs::block_t>(blkin);
 		biterator!=std::istream_iterator<bcs::block_t>();
@@ -98,8 +65,6 @@ int main(int argc,char** argv)
 						{
 							bitcoinRIPEMD160ToAddress(&a[0],&binaddress[0]);
 						}
-						//bitcoinAddressToAscii(&binaddress[0],&ascii[0],37);
-						//std::cout << &ascii[0] << "\n";
 						all_addresses.push_back(binaddress);
 					}
 				}
@@ -120,10 +85,5 @@ int main(int argc,char** argv)
 		bitcoinAddressToAscii(&(*i)[0],&ascii[0],37);
 		std::cout << &ascii[0] << "\n";
 	}
-	/*std::cerr << "Writing 16GB binary address file to disk" << std::endl;
-	std::ofstream outfile("address_stream.bin",std::ofstream::out | std::ofstream::binary);
-	outfile.write(reinterpret_cast<char*>(&all_addresses[0]),all_addresses.size()*25);
-	std::cerr << "Writing complete" << std::endl;
-	std::cerr << lastblockhash << std::endl;*/
 	return 0;
 }
